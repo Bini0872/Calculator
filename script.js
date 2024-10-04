@@ -1,66 +1,71 @@
 const display = document.getElementById('display');
-const buttons = document.querySelectorAll('.btn');
-const equalsButton = document.getElementById('equals');
-
 let currentInput = '';
-let operator = '';
-let firstOperand = '';
+let previousInput = '';
+let operator = null;
 
-buttons.forEach(button => {
+function updateDisplay() {
+    display.value = currentInput || '0';
+}
+
+// Handling button presses
+document.querySelectorAll('.btn').forEach(button => {
     button.addEventListener('click', function() {
         const value = this.getAttribute('data-value');
 
+        // Clear the display
         if (value === 'C') {
             currentInput = '';
-            firstOperand = '';
-            operator = '';
-        } else {
-            currentInput += value;
+            previousInput = '';
+            operator = null;
+            updateDisplay();
+            return;
         }
-        display.value = currentInput;
+
+        // Handling operators
+        if (['+', '-', '*', '/'].includes(value)) {
+            if (currentInput !== '') {
+                previousInput = currentInput;
+                currentInput = '';
+            }
+            operator = value;
+            return;
+        }
+
+        // Handle equals
+        if (value === '=') {
+            if (operator && previousInput !== '' && currentInput !== '') {
+                currentInput = operate(operator, previousInput, currentInput);
+                operator = null;
+                previousInput = '';
+                updateDisplay();
+            }
+            return;
+        }
+
+        // Handling decimal point
+        if (value === '.' && currentInput.includes('.')) return;
+
+        // Append number to the current input
+        currentInput += value;
+        updateDisplay();
     });
 });
 
-equalsButton.addEventListener('click', function() {
-    if (currentInput !== '' && operator !== '') {
-        const secondOperand = currentInput;
-        let result;
+// Operations function
+function operate(operator, a, b) {
+    a = parseFloat(a);
+    b = parseFloat(b);
 
-        switch (operator) {
-            case '+':
-                result = parseFloat(firstOperand) + parseFloat(secondOperand);
-                break;
-            case '-':
-                result = parseFloat(firstOperand) - parseFloat(secondOperand);
-                break;
-            case '*':
-                result = parseFloat(firstOperand) * parseFloat(secondOperand);
-                break;
-            case '/':
-                result = parseFloat(firstOperand) / parseFloat(secondOperand);
-                break;
-            default:
-                return;
-        }
-
-        display.value = result;
-        currentInput = '';
-        firstOperand = result;
-        operator = '';
-    } else {
-        operator = currentInput[currentInput.length - 1];
-        firstOperand = currentInput.slice(0, -1);
-        currentInput = '';
+    switch (operator) {
+        case '+':
+            return (a + b).toString();
+        case '-':
+            return (a - b).toString();
+        case '*':
+            return (a * b).toString();
+        case '/':
+            return b !== 0 ? (a / b).toString() : 'Error';
+        default:
+            return b;
     }
-});
-
-// Add event listeners for operator buttons
-document.querySelectorAll('.operator').forEach(button => {
-    button.addEventListener('click', function() {
-        operator = this.getAttribute('data-value');
-        if (currentInput !== '') {
-            firstOperand = currentInput;
-            currentInput += operator; // Store the operator in currentInput
-        }
-    });
-});
+}
